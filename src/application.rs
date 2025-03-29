@@ -1,58 +1,111 @@
 use gtk::{
     gio,
-    glib::{self},   
+    glib::{self,clone},
+    subclass::prelude::*,
+    glib::Properties,
     prelude::*,
 };
+
 use crate::{
-    widgets::{Window},
-     models::{
-        ProvidersModel,
-    },
+    widgets::{Window,PreferencesWindow},
+     models::{ProvidersModel},
 };
+use std::rc::Rc;
 
 mod imp {
- use std::cell::{Cell, RefCell};
-  use gtk::subclass::prelude::*;
- use super::*;
-
-  
-  #[derive(Default, glib::Properties)]
+  use std::cell::{Cell, RefCell};
+  use super::*;
+  #[derive(Default,glib::Properties,Debug)]
   #[properties(wrapper_type = super::Application)]
- pub struct Application 
- {
+ pub struct Application {
         pub window: RefCell<Option<glib::WeakRef<Window>>>,
+        pub window2 : glib::WeakRef<Window>,
+        pub model: ProvidersModel,      
         #[property(get, set, construct)]
         pub is_locked: Cell<bool>,
-        pub model: ProvidersModel,
-        pub lock_timeout_id: RefCell<Option<glib::Source>>,
-        #[property(get, set, construct)]
-        pub can_be_locked: Cell<bool>,
-        #[property(get, set, construct_only)]
-        pub is_keyring_open: Cell<bool>,
-       
+      
  }
     // Sets up the basics for the GObject
     #[glib::object_subclass]
     impl ObjectSubclass for Application {
         const NAME: &'static str = "Application";
-        type ParentType = gtk::Application;
         type Type = super::Application;
+        type ParentType = gtk::Application;
+        
     }
     
     #[glib::derived_properties]
     impl ObjectImpl for Application {}   
     
     impl ApplicationImpl for Application {
+
        fn startup(&self) {
            //If this part doesn't have the program, it can Error
-           self.parent_startup();                       
+           self.parent_startup();   
+           let app = self.obj();  
+               
+                 let quit_action = gio::ActionEntry::builder("quit")
+                .activate(|app: &Self::Type, _, _| {
+                   
+                      app.quit()
+                }).build();      
+                
+                //preferences test
+                
+                 let preferences_action = gio::ActionEntry::builder("preferences")
+                .activate(|app: &Self::Type, _, _| {
+                 let preferences = PreferencesWindow::default();
+                     println!("preferences");
+                }).build();
+                
+                
+                // About
+            let about_action = gio::ActionEntry::builder("about")
+                .activate(|app: &Self::Type, _, _| {
+                    let window = app.active_window();
+                    gtk::AboutDialog::builder()                      
+                        .website("https://gitlab.gnome.org/World/Authenticator")                
+                        .artists(vec!["Alexandros Felekidis", "Tobias Bernard"])
+                        .license_type(gtk::License::Gpl30)
+                        .build()
+                        .present();
+                })
+                .build();
+                
+             app.add_action_entries([
+                quit_action,
+                preferences_action,
+                about_action,
+            ]);
+            
+             let preferences_action = app.lookup_action("preferences").unwrap();
+             app.bind_property("is-locked", &preferences_action, "enabled")
+                .invert_boolean()
+                .sync_create()
+                .build();
        }
        fn activate(&self) {
            let app = self.obj();
-            println!("activate!!");
-           //Show the Window with  widgets::{Window}          
+           //let window = app.active_window();
+           //println!("window::{:#?}",window);
+            
+            app.set_accels_for_action("app.quit", &["<primary>q"]);
+            app.set_accels_for_action("app.preferences", &["<primary>p"]);
+            app.set_accels_for_action("app.about", &["<primary>a"]);
+            
+           //Show the Window with  widgets::{Window}     
+           
            let window = Window::new(&self.model, &app);
+            //window.present();
+            if let Some(ref win) = *self.window.borrow() {
+                let window = win.upgrade().unwrap();
+                window.present();
+                return;
+            }
+            
+           
             window.present();
+            self.window.replace(Some(window.downgrade()));
        }
    }
    impl GtkApplicationImpl for Application {}
@@ -71,8 +124,17 @@ impl Application {
             .build();                  
             app.run()
     }
+    
+   pub fn active_window(&self) -> Window {
+        self.imp()
+            .window
+            .borrow()
+            .as_ref()
+            .unwrap()
+            .upgrade()
+            .unwrap()
+    }
+    
+   
 }
 
-    
-  
- 
