@@ -1,7 +1,7 @@
 //call library dependency gtk glib 
 use std::cell::Cell;
 use gtk::{
-    gio,
+    gio,    
     glib::{self},
     subclass::prelude::*,
     prelude::*,
@@ -27,24 +27,31 @@ mod imp {
         #[property(get, set, construct)]
         pub is_locked: Cell<bool>,
        
-        #[template_child]
-        pub btn_click1: TemplateChild<gtk::Button>,
-         #[template_child]
-        pub btn_click2: TemplateChild<gtk::Button>,
-         #[template_child]
-        pub btn_click3: TemplateChild<gtk::Button>,
-        pub test : String, //test make name
+      
     }
     
     #[glib::object_subclass]
     impl ObjectSubclass for Window {
-        const NAME: &'static str = "Window";
+        const NAME: &'static str = "window_main";
         type Type = super::Window;
         type ParentType = gtk::ApplicationWindow;
         type Interfaces = (gio::Initable,);  
          
             fn class_init(klass: &mut Self::Class) {
-               Self::bind_template(klass);                                
+               Self::bind_template(klass);   
+               //println!("{:#?}",klass);
+               
+               //let action_group = gio::SimpleActionGroup::new();
+               let btn_click_action = gio::SimpleAction::new("btn_click", None);
+               
+                btn_click_action.connect_activate(move |win,_| {
+                let imp = win.imp();
+                println!("hello");
+            
+               });
+               
+                //klass.add_action(&btn_click_action);
+                
             }
             fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
                 obj.init_template();
@@ -75,7 +82,7 @@ mod imp {
 //macro glib wrapper
 glib::wrapper! {
     pub struct Window(ObjectSubclass<imp::Window>)
-        @extends gtk::Widget, gtk::Window, gtk::ApplicationWindow, 
+        @extends gtk::Widget, gtk::Window,gtk::ApplicationWindow, 
         @implements gio::Initable;
 }
 

@@ -1,8 +1,7 @@
 use gtk::{
     gio,
-    glib::{self,clone},
+    glib::{self},
     subclass::prelude::*,
-    glib::Properties,
     prelude::*,
 };
 
@@ -10,7 +9,6 @@ use crate::{
     widgets::{Window,PreferencesWindow},
      models::{ProvidersModel},
 };
-use std::rc::Rc;
 
 mod imp {
   use std::cell::{Cell, RefCell};
@@ -51,18 +49,28 @@ mod imp {
                 }).build();      
                 
                 //preferences test
-                
+                /*
                  let preferences_action = gio::ActionEntry::builder("preferences")
                 .activate(|app: &Self::Type, _, _| {
                  let preferences = PreferencesWindow::default();
                      println!("preferences");
                 }).build();
-                
-                
+                */
+             
+               //let action_group = gio::SimpleActionGroup::new();
+               /* code compile OK  i can click and show Message
+               let btn_click_action = gio::SimpleAction::new("btn_click", None);
+    
+                btn_click_action.connect_activate(move |_,_| {
+                println!("hello with Application");
+            
+               });
+                app.add_action(&btn_click_action);
+               */
                 // About
             let about_action = gio::ActionEntry::builder("about")
                 .activate(|app: &Self::Type, _, _| {
-                    let window = app.active_window();
+                    let _window = app.active_window();
                     gtk::AboutDialog::builder()                      
                         .website("https://gitlab.gnome.org/World/Authenticator")                
                         .artists(vec!["Alexandros Felekidis", "Tobias Bernard"])
@@ -74,15 +82,16 @@ mod imp {
                 
              app.add_action_entries([
                 quit_action,
-                preferences_action,
+                //preferences_action,
                 about_action,
             ]);
-            
+            /*
              let preferences_action = app.lookup_action("preferences").unwrap();
              app.bind_property("is-locked", &preferences_action, "enabled")
                 .invert_boolean()
                 .sync_create()
                 .build();
+                */
        }
        fn activate(&self) {
            let app = self.obj();

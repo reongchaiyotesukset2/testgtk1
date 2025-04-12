@@ -44,7 +44,9 @@ mod imp {
         type Interfaces = (gio::Initable,);  
          
             fn class_init(klass: &mut Self::Class) {
-               Self::bind_template(klass);                                
+               Self::bind_template(klass);       
+               
+               
             }
             fn instance_init(obj: &glib::subclass::InitializingObject<Self>) {
                 obj.init_template();
